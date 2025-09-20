@@ -16,6 +16,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import tw from 'twrnc';
+import Toast from 'react-native-toast-message';
 import { Logo } from '../../components/Logo';
 import { COLORS, GRADIENTS } from '../../constants/Colors';
 import { useUser } from '../../contexts/UserContext';
@@ -45,8 +46,8 @@ const SignupStatic: React.FC = () => {
       return;
     }
     try {
-      console.log('Register API URL:', 'http://192.168.1.7:5000/api/auth/register');
-      const res = await fetch('http://192.168.1.7:5000/api/auth/register', {
+      console.log('Register API URL:', 'http://93.127.213.176:3002/api/users/register');
+      const res = await fetch('http://93.127.213.176:3002/api/users/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, role })
@@ -55,8 +56,11 @@ const SignupStatic: React.FC = () => {
       if (res.ok) {
         await AsyncStorage.setItem('userRole', role);
         await AsyncStorage.setItem('userEmail', email);
-        setStep('verify');
-        setMessage('Registration successful. OTP sent to email.');
+        setMessage('Registration successful! Redirecting to login...');
+        // Redirect to login page after 2 seconds
+        setTimeout(() => {
+          window.location.href = '/login'; // For web demo
+        }, 2000);
       } else {
         setMessage(data.message || 'Registration failed.');
       }
@@ -176,13 +180,21 @@ export default function SignupScreen() {
     
     if (!email) {
       console.log("❌ SignupScreen: Email is required");
-      Alert.alert('Error', 'Please enter your email address first');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please enter your email address first',
+      });
       return;
     }
 
     if (!isValidEmail(email)) {
       console.log("❌ SignupScreen: Invalid email format");
-      Alert.alert('Error', 'Please enter a valid email address');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please enter a valid email address',
+      });
       return;
     }
 
@@ -197,6 +209,11 @@ export default function SignupScreen() {
       setCurrentStep('otp');
       setCountdown(60); // Start 60 second countdown
       console.log("🎉 ===== SIGNUP SCREEN: SEND OTP SUCCESS =====");
+      Toast.show({
+        type: 'success',
+        text1: 'OTP Sent',
+        text2: 'Please check your email for the verification code.',
+      });
     } catch (error) {
       console.error('💥 SignupScreen: Send OTP error:', error);
       console.error("❌ ===== SIGNUP SCREEN: SEND OTP FAILED =====");
@@ -212,7 +229,11 @@ export default function SignupScreen() {
         }
       }
       
-      Alert.alert('Error', errorMessage);
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to Send OTP',
+        text2: errorMessage,
+      });
     } finally {
       setIsOtpLoading(false);
     }
@@ -229,14 +250,21 @@ export default function SignupScreen() {
       console.log('🔍 SignupScreen: Calling verifyOtp function...');
       await verifyOtp(email, otp);
       setIsOtpVerified(true);
-      setCurrentStep('register');
       console.log("✅ SignupScreen: OTP verification successful");
       console.log("🎉 ===== SIGNUP SCREEN: VERIFY OTP SUCCESS =====");
-      Alert.alert('Email Verified', 'Your email has been verified! Now complete your registration.');
+      Toast.show({
+        type: 'success',
+        text1: 'Email Verified',
+        text2: 'Your email has been verified! You can now complete your registration.',
+      });
     } catch (error) {
       console.error('💥 SignupScreen: OTP verification error:', error);
       console.error("❌ ===== SIGNUP SCREEN: VERIFY OTP FAILED =====");
-      Alert.alert('Error', error instanceof Error ? error.message : 'OTP verification failed');
+      Toast.show({
+        type: 'error',
+        text1: 'Verification Failed',
+        text2: error instanceof Error ? error.message : 'OTP verification failed. Please try again.',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -279,31 +307,51 @@ export default function SignupScreen() {
     
     if (!name || !email || !password || !confirmPassword) {
       console.log("❌ SignupScreen: Missing required fields");
-      Alert.alert('Error', 'Please fill in all fields first');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please fill in all fields first',
+      });
       return;
     }
 
     if (password.length < 6) {
       console.log("❌ SignupScreen: Password too short");
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Password must be at least 6 characters long',
+      });
       return;
     }
 
     if (password !== confirmPassword) {
       console.log("❌ SignupScreen: Passwords don't match");
-      Alert.alert('Error', 'Passwords do not match');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Passwords do not match',
+      });
       return;
     }
 
     if (!userRole) {
       console.log("❌ SignupScreen: No role selected");
-      Alert.alert('Error', 'Please select your role first');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please select your role first',
+      });
       return;
     }
 
     if (!isOtpVerified) {
       console.log("❌ SignupScreen: Email not verified");
-      Alert.alert('Error', 'Please verify your email first');
+      Toast.show({
+        type: 'error',
+        text1: 'Email Verification Required',
+        text2: 'Please verify your email first',
+      });
       return;
     }
 
@@ -315,12 +363,14 @@ export default function SignupScreen() {
       await registerAfterVerification(name, email, password, userRole);
       console.log('✅ SignupScreen: Registration successful');
       console.log("🎉 ===== SIGNUP SCREEN: REGISTER SUCCESS =====");
-      Alert.alert('Success', 'Account created and verified successfully!', [
-        {
-          text: 'OK',
-          onPress: () => router.push('/(auth)/login'),
-        },
-      ]);
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Account created and verified successfully!',
+      });
+      setTimeout(() => {
+        router.push('/(auth)/login');
+      }, 2000);
     } catch (error) {
       console.error('💥 SignupScreen: Registration error:', error);
       console.error("❌ ===== SIGNUP SCREEN: REGISTER FAILED =====");
@@ -334,7 +384,11 @@ export default function SignupScreen() {
         }
       }
       
-      Alert.alert('Error', errorMessage);
+      Toast.show({
+        type: 'error',
+        text1: 'Registration Failed',
+        text2: errorMessage,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -364,253 +418,7 @@ export default function SignupScreen() {
 
   console.log('userRole: userRole', userRole);
 
-  // Show OTP verification screen if OTP is sent
-  if (isOtpSent && !isOtpVerified) {
-    return (
-      <View style={tw`flex-1`}>
-        <KeyboardAvoidingView
-          style={tw`flex-1`}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <StatusBar barStyle="light-content" backgroundColor={COLORS.BACKGROUND_DARK} />
-        
-        {/* Background Gradient */}
-        <LinearGradient
-          colors={GRADIENTS.BACKGROUND}
-          style={tw`absolute inset-0`}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        />
-
-        {/* Subtle Background Pattern */}
-        <View style={tw`absolute inset-0 opacity-5`}>
-          <View style={[tw`absolute top-20 left-8 w-16 h-0.5`, { backgroundColor: themeColor }]} />
-          <View style={[tw`absolute top-40 right-12 w-12 h-0.5`, { backgroundColor: COLORS.SECONDARY }]} />
-          <View style={[tw`absolute bottom-40 left-12 w-20 h-0.5`, { backgroundColor: COLORS.ACCENT }]} />
-          <View style={[tw`absolute bottom-20 right-8 w-10 h-0.5`, { backgroundColor: themeColor }]} />
-        </View>
-
-        <ScrollView
-          contentContainerStyle={[
-            tw`flex-grow justify-center`,
-            { paddingVertical: spacing * 3 }
-          ]}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={[
-            tw`items-center justify-center`,
-            { 
-              paddingHorizontal: paddingHorizontal,
-              maxWidth: maxWidth,
-              alignSelf: 'center',
-              width: '100%'
-            }
-          ]}>
-            
-            {/* Header Section */}
-            <View style={[
-              tw`items-center justify-center`,
-              { marginBottom: spacing * 2.5 }
-            ]}>
-              <View style={[
-                tw`items-center justify-center rounded-full`,
-                {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  width: 80,
-                  height: 80,
-                  marginBottom: spacing * 1.5,
-                }
-              ]}>
-                <Ionicons
-                  name="mail-outline"
-                  size={40}
-                  color={themeColor}
-                />
-              </View>
-              
-              <Text
-                style={[
-                  tw`font-bold text-center`,
-                  {
-                    fontFamily: 'Poppins-Bold',
-                    color: COLORS.TEXT_WHITE,
-                    fontSize: titleSize,
-                    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-                    textShadowOffset: { width: 1, height: 1 },
-                    textShadowRadius: 2,
-                    marginBottom: spacing * 0.5,
-                    lineHeight: titleSize * 1.2
-                  },
-                ]}
-              >
-                Verify Your Email
-              </Text>
-              
-              <Text
-                style={[
-                  tw`text-center`,
-                  {
-                    fontFamily: 'Poppins-Medium',
-                    color: COLORS.TEXT_GRAY_LIGHT,
-                    fontSize: subtitleSize,
-                    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-                    textShadowOffset: { width: 0.5, height: 0.5 },
-                    textShadowRadius: 1,
-                    lineHeight: subtitleSize * 1.4,
-                    maxWidth: maxWidth - 32
-                  },
-                ]}
-              >
-                We've sent a 6-digit verification code to{'\n'}
-                <Text style={{ color: themeColor, fontFamily: 'Poppins-SemiBold' }}>
-                  {email}
-                </Text>
-              </Text>
-            </View>
-
-            {/* OTP Input Section */}
-            <View style={[
-              tw`w-full`,
-              { gap: spacing * 1.5, marginBottom: spacing * 2 }
-            ]}>
-              
-              <Text
-                style={[
-                  tw`font-semibold text-center`,
-                  {
-                    fontFamily: 'Poppins-SemiBold',
-                    color: COLORS.TEXT_WHITE,
-                    fontSize: subtitleSize - 1,
-                    marginBottom: spacing * 0.5,
-                  },
-                ]}
-              >
-                Enter Verification Code
-              </Text>
-
-              {/* OTP Input */}
-              <View style={[
-                tw`border rounded-xl`,
-                {
-                  borderColor: COLORS.BORDER_GRAY,
-                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                  borderWidth: 1,
-                  height: inputHeight,
-                  paddingHorizontal: spacing,
-                  marginBottom: spacing * 1.5,
-                },
-              ]}>
-                <TextInput
-                  style={[
-                    tw`flex-1 text-center`,
-                    {
-                      fontFamily: 'Poppins-Bold',
-                      color: COLORS.TEXT_WHITE,
-                      fontSize: subtitleSize + 2,
-                    },
-                  ]}
-                  placeholder="Enter 6-digit OTP"
-                  placeholderTextColor={COLORS.TEXT_GRAY}
-                  value={otp}
-                  onChangeText={setOtp}
-                  keyboardType="numeric"
-                  maxLength={6}
-                  autoCorrect={false}
-                  autoCapitalize="none"
-                />
-              </View>
-
-              {/* Verify Button */}
-              <TouchableOpacity
-                onPress={() => handleVerifyOtp(otp)}
-                disabled={isLoading || otp.length !== 6}
-                style={[
-                  tw`rounded-xl items-center justify-center flex-row`,
-                  {
-                    backgroundColor: isLoading || otp.length !== 6 ? COLORS.BORDER_GRAY : themeColor,
-                    height: buttonHeight,
-                    marginBottom: spacing * 1.2,
-                  },
-                ]}
-              >
-                {isLoading && (
-                  <Ionicons
-                    name="refresh-outline"
-                    size={18}
-                    color={COLORS.TEXT_WHITE}
-                    style={{ marginRight: spacing - 4 }}
-                  />
-                )}
-                <Text
-                  style={[
-                    tw`font-bold`,
-                    {
-                      fontFamily: 'Poppins-Bold',
-                      color: COLORS.TEXT_WHITE,
-                      fontSize: subtitleSize + 1,
-                    },
-                  ]}
-                >
-                  {isLoading ? 'Verifying...' : 'Verify OTP'}
-                </Text>
-              </TouchableOpacity>
-
-              {/* Resend Section */}
-              <View style={tw`items-center`}>
-                <Text
-                  style={[
-                    tw`text-center`,
-                    {
-                      fontFamily: 'Poppins-Medium',
-                      color: COLORS.TEXT_GRAY_LIGHT,
-                      fontSize: subtitleSize - 1,
-                      lineHeight: subtitleSize * 1.3,
-                      marginBottom: spacing * 0.5,
-                    },
-                  ]}
-                >
-                  Didn't receive the code?
-                </Text>
-                
-                <TouchableOpacity
-                  onPress={handleResendOtp}
-                  disabled={isOtpLoading || countdown > 0}
-                  style={[
-                    tw`px-4 py-2 rounded-lg`,
-                    {
-                      backgroundColor: isOtpLoading || countdown > 0 
-                        ? 'rgba(255, 255, 255, 0.1)' 
-                        : 'rgba(255, 255, 255, 0.2)',
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      tw`font-semibold`,
-                      {
-                        fontFamily: 'Poppins-SemiBold',
-                        color: isOtpLoading || countdown > 0 ? COLORS.TEXT_GRAY : themeColor,
-                        fontSize: subtitleSize - 1,
-                      },
-                    ]}
-                  >
-                    {isOtpLoading 
-                      ? 'Resending...' 
-                      : countdown > 0 
-                        ? `Resend in ${countdown}s` 
-                        : 'Resend OTP'
-                    }
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </ScrollView>
-        </KeyboardAvoidingView>
-      </View>
-    );
-  }
+  // Main signup screen - no separate OTP screen, show OTP input inline
 
   return (
     <View style={tw`flex-1`}>
@@ -836,6 +644,114 @@ export default function SignupScreen() {
               </View>
             </View>
 
+            {/* OTP Input - Show after OTP is sent */}
+            {isOtpSent && (
+              <View style={{ marginBottom: spacing * 0.8 }}>
+                <Text
+                  style={[
+                    tw`font-semibold mb-1.5`,
+                    {
+                      fontFamily: 'Poppins-SemiBold',
+                      color: COLORS.TEXT_WHITE,
+                      fontSize: subtitleSize - 1,
+                    },
+                  ]}
+                >
+                  Verification Code
+                </Text>
+                <View
+                  style={[
+                    tw`border rounded-xl flex-row items-center justify-between`,
+                    {
+                      borderColor: COLORS.BORDER_GRAY,
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                      borderWidth: 1,
+                      height: inputHeight,
+                      paddingHorizontal: spacing,
+                    },
+                  ]}
+                >
+                  <View style={tw`flex-row items-center flex-1`}>
+                    <Ionicons
+                      name="shield-checkmark-outline"
+                      size={isSmallScreen ? 16 : 18}
+                      color={COLORS.TEXT_GRAY}
+                      style={{ marginRight: spacing - 2 }}
+                    />
+                    <TextInput
+                      style={[
+                        tw`flex-1`,
+                        {
+                          fontFamily: 'Poppins-Medium',
+                          color: COLORS.TEXT_WHITE,
+                          fontSize: subtitleSize,
+                        },
+                      ]}
+                      placeholder="Enter 6-digit OTP"
+                      placeholderTextColor={COLORS.TEXT_GRAY}
+                      value={otp}
+                      onChangeText={setOtp}
+                      keyboardType="numeric"
+                      maxLength={6}
+                      autoCorrect={false}
+                      autoCapitalize="none"
+                    />
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleVerifyOtp(otp)}
+                    disabled={isLoading || otp.length !== 6}
+                    style={[
+                      tw`ml-2 px-3 py-1.5 rounded-lg`,
+                      {
+                        backgroundColor: isLoading || otp.length !== 6 
+                          ? COLORS.BORDER_GRAY 
+                          : themeColor,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        tw`font-semibold text-xs`,
+                        {
+                          fontFamily: 'Poppins-SemiBold',
+                          color: COLORS.TEXT_WHITE,
+                        },
+                      ]}
+                    >
+                      {isLoading ? 'Verifying...' : 'Verify'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                
+                {/* Resend OTP */}
+                <View style={tw`items-center mt-2`}>
+                  <TouchableOpacity
+                    onPress={handleResendOtp}
+                    disabled={isOtpLoading || countdown > 0}
+                    style={tw`py-1`}
+                  >
+                    <Text
+                      style={[
+                        tw`text-center`,
+                        {
+                          fontFamily: 'Poppins-Medium',
+                          color: isOtpLoading || countdown > 0 ? COLORS.TEXT_GRAY : themeColor,
+                          fontSize: subtitleSize - 2,
+                        },
+                      ]}
+                    >
+                      {isOtpLoading 
+                        ? 'Resending...' 
+                        : countdown > 0 
+                          ? `Resend in ${countdown}s` 
+                          : 'Resend OTP'
+                      }
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
 
             {/* Password Input */}
             <View style={{ marginBottom: spacing * 0.8 }}>
@@ -970,11 +886,13 @@ export default function SignupScreen() {
             {/* Signup Button */}
             <TouchableOpacity
               onPress={handleSignup}
-              disabled={isLoading || !isOtpVerified}
+              disabled={isLoading || !isOtpVerified || !name || !email || !password || !confirmPassword}
               style={[
                 tw`rounded-xl items-center justify-center flex-row`,
                 {
-                  backgroundColor: isLoading || !isOtpVerified ? COLORS.BORDER_GRAY : themeColor,
+                  backgroundColor: (isLoading || !isOtpVerified || !name || !email || !password || !confirmPassword) 
+                    ? COLORS.BORDER_GRAY 
+                    : themeColor,
                   height: buttonHeight,
                   marginBottom: spacing * 1.2,
                 },
@@ -998,7 +916,12 @@ export default function SignupScreen() {
                   },
                 ]}
               >
-                {isLoading ? 'Creating Account...' : !isOtpVerified ? 'Verify Email First' : 'Create Account'}
+                {isLoading 
+                  ? 'Creating Account...' 
+                  : !isOtpVerified 
+                    ? 'Verify Email First' 
+                    : 'Create Account'
+                }
               </Text>
             </TouchableOpacity>
 
@@ -1068,4 +991,4 @@ export default function SignupScreen() {
       </KeyboardAvoidingView>
     </View>
   );
-} 
+}
