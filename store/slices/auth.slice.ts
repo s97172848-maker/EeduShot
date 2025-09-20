@@ -107,7 +107,7 @@ export const verifyOtpThunk = createAsyncThunk(
       console.log('🔍 Auth Slice: Verifying OTP...');
       console.log('🔍 Auth Slice: Email:', params.email, 'OTP:', params.otp);
       
-      const response = await http.post('/users/verify', params);
+      const response = await http.post('/users/verify-otp', { otp: params.otp });
       console.log('✅ Auth Slice: Verify OTP response:', response.data);
       return true;
     } catch (e: any) {
@@ -142,7 +142,7 @@ export const forgotPasswordThunk = createAsyncThunk(
   'auth/forgotPassword',
   async (params: { email: string }, { rejectWithValue }) => {
     try {
-      await http.post('/auth/forgot-password', params);
+      await http.post('/users/forgot-password', params);
       return true;
     } catch (e: any) {
       const msg = e?.response?.data?.message || e.message || 'Forgot password failed';
@@ -155,7 +155,7 @@ export const resetPasswordThunk = createAsyncThunk(
   'auth/resetPassword',
   async (params: { email: string; otp: string; newPassword: string }, { rejectWithValue }) => {
     try {
-      await http.post('/auth/reset-password', params);
+      await http.post('/users/reset-password', params);
       return true;
     } catch (e: any) {
       const msg = e?.response?.data?.message || e.message || 'Reset password failed';

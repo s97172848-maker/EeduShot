@@ -127,9 +127,9 @@ class ApiService {
     console.log('🔍 API Service: Verifying OTP...');
     console.log('🔍 API Service: Email:', email, 'OTP:', otp);
     
-    const response = await this.makeRequest<OtpResponse>('/users/verify', {
+    const response = await this.makeRequest<OtpResponse>('/users/verify-otp', {
       method: 'POST',
-      body: JSON.stringify({ email, otp }),
+      body: JSON.stringify({ otp }),
     });
     
     console.log('✅ API Service: OTP verification successful:', response);
@@ -152,7 +152,7 @@ class ApiService {
 
   // Forgot Password
   async forgotPassword(email: string): Promise<OtpResponse> {
-    return this.makeRequest<OtpResponse>('/forgot-password', {
+    return this.makeRequest<OtpResponse>('/users/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
@@ -160,7 +160,7 @@ class ApiService {
 
   // Reset Password
   async resetPassword(email: string, otp: string, newPassword: string): Promise<OtpResponse> {
-    return this.makeRequest<OtpResponse>('/reset-password', {
+    return this.makeRequest<OtpResponse>('/users/reset-password', {
       method: 'POST',
       body: JSON.stringify({ email, otp, newPassword }),
     });

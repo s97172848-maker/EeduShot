@@ -327,8 +327,6 @@ export default function HomeScreen() {
     );
   };
 
-
-
   const renderVideoCard = ({ item }: { item: any }) => {
     const isLiked = likedVideos.has(item.id);
 
@@ -556,8 +554,35 @@ export default function HomeScreen() {
       </Animated.View>
       </TouchableOpacity>
     );
+  
   };
-console.log("userRole",userRole)
+
+  const getVideos = async () => {
+    const requestOptions = {
+      method: "GET",
+      redirect: "follow"
+    };
+  
+    try {
+      const response = await fetch("http://93.127.213.176:3002/api/videos/videos", requestOptions);
+      const result = await response.json(); // Assuming the response is JSON
+  
+      if (result === "Success") {
+        console.log(result);
+      } else {
+        console.log(result.message); // assuming the API might return a message property
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  
+  useEffect(() => {
+    getVideos();
+  }, []);
+  
+
+console.log("userRole",userRole);
   return (
     <SafeAreaView style={{flex: 1}}>
       <StatusBar barStyle="light-content"/>
